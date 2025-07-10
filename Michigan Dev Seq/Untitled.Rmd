@@ -1,0 +1,365 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Cmd+Shift+Enter*. 
+
+```{r}
+library(tidyverse)
+library(here)
+library(dplyr)
+library(stringr)
+library(purrr)
+
+ds <- read.csv(here("Data", "Merged_CompSkillSeq_byTimepoint_v2.csv"))
+
+```
+
+Adding variables
+
+```{r}
+#Creating Mode for each componenet
+
+#Throwing
+ds <- ds %>%
+  rowwise() %>%
+  mutate(
+    Throw_Step_Mode = {
+      scores <- c_across(starts_with("Throw_Step_"))
+      tbl <- table(na.omit(scores))
+      if (length(tbl) == 0) NA_integer_ else as.integer(names(sort(tbl, decreasing = TRUE))[1])
+    }
+  ) %>%
+  ungroup()
+
+ds <- ds %>%
+  rowwise() %>%
+  mutate(
+    Throw_Trunk_Mode = {
+      scores <- c_across(starts_with("Throw_Trunk_"))
+      tbl <- table(na.omit(scores))
+      if (length(tbl) == 0) NA_integer_ else as.integer(names(sort(tbl, decreasing = TRUE))[1])
+    }
+  ) %>%
+  ungroup()
+
+ds <- ds %>%
+  rowwise() %>%
+  mutate(
+    Throw_Humerus_Mode = {
+      scores <- c_across(starts_with("Throw_Humerus_"))
+      tbl <- table(na.omit(scores))
+      if (length(tbl) == 0) NA_integer_ else as.integer(names(sort(tbl, decreasing = TRUE))[1])
+    }
+  ) %>%
+  ungroup()
+
+ds <- ds %>%
+  rowwise() %>%
+  mutate(
+    Throw_Forearm_Mode = {
+      scores <- c_across(starts_with("Throw_Forearm_"))
+      tbl <- table(na.omit(scores))
+      if (length(tbl) == 0) NA_integer_ else as.integer(names(sort(tbl, decreasing = TRUE))[1])
+    }
+  ) %>%
+  ungroup()
+
+#Kicking
+
+ds <- ds %>%
+  rowwise() %>%
+  mutate(
+    Kick_Approach_Mode = {
+      scores <- c_across(starts_with("Kick_Approach_"))
+      tbl <- table(na.omit(scores))
+      if (length(tbl) == 0) NA_integer_ else as.integer(names(sort(tbl, decreasing = TRUE))[1])
+    }
+  ) %>%
+  ungroup()
+
+ds <- ds %>%
+  rowwise() %>%
+  mutate(
+    Kick_Support.Loc_Mode = {
+      scores <- c_across(starts_with("Kick_Support.Loc_"))
+      tbl <- table(na.omit(scores))
+      if (length(tbl) == 0) NA_integer_ else as.integer(names(sort(tbl, decreasing = TRUE))[1])
+    }
+  ) %>%
+  ungroup()
+
+ds <- ds %>%
+  rowwise() %>%
+  mutate(
+    Kick_Knee.Action_Mode = {
+      scores <- c_across(starts_with("Kick_Knee.Action_"))
+      tbl <- table(na.omit(scores))
+      if (length(tbl) == 0) NA_integer_ else as.integer(names(sort(tbl, decreasing = TRUE))[1])
+    }
+  ) %>%
+  ungroup()
+
+ds <- ds %>%
+  rowwise() %>%
+  mutate(
+    Kick_Trunk.Action_Mode = {
+      scores <- c_across(starts_with("Kick_Trunk.Action_"))
+      tbl <- table(na.omit(scores))
+      if (length(tbl) == 0) NA_integer_ else as.integer(names(sort(tbl, decreasing = TRUE))[1])
+    }
+  ) %>%
+  ungroup()
+
+ds <- ds %>%
+  rowwise() %>%
+  mutate(
+    Kick_Arm.Action_Mode = {
+      scores <- c_across(starts_with("Kick_Arm.Action_"))
+      tbl <- table(na.omit(scores))
+      if (length(tbl) == 0) NA_integer_ else as.integer(names(sort(tbl, decreasing = TRUE))[1])
+    }
+  ) %>%
+  ungroup()
+
+ds <- ds %>%
+  rowwise() %>%
+  mutate(
+    Kick_Follow.Through_Mode = {
+      scores <- c_across(starts_with("Kick_Follow.Through_"))
+      tbl <- table(na.omit(scores))
+      if (length(tbl) == 0) NA_integer_ else as.integer(names(sort(tbl, decreasing = TRUE))[1])
+    }
+  ) %>%
+  ungroup()
+
+#Hopping
+
+ds <- ds %>%
+  rowwise() %>%
+  mutate(
+    Hopping_Arm_Mode = {
+      scores <- c_across(starts_with("Hopping_Arm_"))
+      tbl <- table(na.omit(scores))
+      if (length(tbl) == 0) NA_integer_ else as.integer(names(sort(tbl, decreasing = TRUE))[1])
+    }
+  ) %>%
+  ungroup()
+
+ds <- ds %>%
+  rowwise() %>%
+  mutate(
+    Hopping_Leg_Mode = {
+      scores <- c_across(starts_with("Hopping_Leg_"))
+      tbl <- table(na.omit(scores))
+      if (length(tbl) == 0) NA_integer_ else as.integer(names(sort(tbl, decreasing = TRUE))[1])
+    }
+  ) %>%
+  ungroup()
+
+#Standing Long Jump
+
+ds <- ds %>%
+  rowwise() %>%
+  mutate(
+    Jump_TO_Arm_Mode = {
+      scores <- c_across(starts_with("Jump_TO_Arm_"))
+      tbl <- table(na.omit(scores))
+      if (length(tbl) == 0) NA_integer_ else as.integer(names(sort(tbl, decreasing = TRUE))[1])
+    }
+  ) %>%
+  ungroup()
+
+ds <- ds %>%
+  rowwise() %>%
+  mutate(
+    Jump_TO_Leg_Mode = {
+      scores <- c_across(starts_with("Jump_TO_Leg_"))
+      tbl <- table(na.omit(scores))
+      if (length(tbl) == 0) NA_integer_ else as.integer(names(sort(tbl, decreasing = TRUE))[1])
+    }
+  ) %>%
+  ungroup()
+
+ds <- ds %>%
+  rowwise() %>%
+  mutate(
+    Jump_LND_Arm_Mode = {
+      scores <- c_across(starts_with("Jump_LND_Arm_"))
+      tbl <- table(na.omit(scores))
+      if (length(tbl) == 0) NA_integer_ else as.integer(names(sort(tbl, decreasing = TRUE))[1])
+    }
+  ) %>%
+  ungroup()
+
+ds <- ds %>%
+  rowwise() %>%
+  mutate(
+    Jump_LND_Foot_Mode = {
+      scores <- c_across(starts_with("Jump_LND_Foot_"))
+      tbl <- table(na.omit(scores))
+      if (length(tbl) == 0) NA_integer_ else as.integer(names(sort(tbl, decreasing = TRUE))[1])
+    }
+  ) %>%
+  ungroup()
+
+ds <- ds %>%
+  rowwise() %>%
+  mutate(
+    Jump_LND_Shank_Mode = {
+      scores <- c_across(starts_with("Jump_LND_Shank_"))
+      tbl <- table(na.omit(scores))
+      if (length(tbl) == 0) NA_integer_ else as.integer(names(sort(tbl, decreasing = TRUE))[1])
+    }
+  ) %>%
+  ungroup()
+
+
+# Creating Dev Seq Profile variables for each trial
+
+ds <- ds %>%
+  mutate(
+    Throw_Profile_1 = str_c(Throw_Step_1, Throw_Trunk_1, Throw_Humerus_1, Throw_Forearm_1, sep = ""),
+    Throw_Profile_2 = str_c(Throw_Step_2, Throw_Trunk_2, Throw_Humerus_2, Throw_Forearm_2, sep = ""),
+    Throw_Profile_3 = str_c(Throw_Step_3, Throw_Trunk_3, Throw_Humerus_3, Throw_Forearm_3, sep = ""),
+    Throw_Profile_4 = str_c(Throw_Step_4, Throw_Trunk_4, Throw_Humerus_4, Throw_Forearm_4, sep = ""),
+    Throw_Profile_5 = str_c(Throw_Step_5, Throw_Trunk_5, Throw_Humerus_5, Throw_Forearm_5, sep = ""),
+    Hopping_Profile_1 = str_c(Hopping_Arm_1, Hopping_Leg_1, sep = ""),
+    Hopping_Profile_2 = str_c(Hopping_Arm_2, Hopping_Leg_2, sep = ""),
+    Hopping_Profile_3 = str_c(Hopping_Arm_3, Hopping_Leg_3, sep = ""),
+    Hopping_Profile_4 = str_c(Hopping_Arm_4, Hopping_Leg_4, sep = ""),
+    Kick_Profile_1 = str_c(Kick_Approach_1, Kick_Support.Loc_1, Kick_Knee.Action_1, Kick_Trunk.Action_1, Kick_Arm.Action_1, Kick_Follow.Through_1, sep = ""),
+    Kick_Profile_2 = str_c(Kick_Approach_2, Kick_Support.Loc_2, Kick_Knee.Action_2, Kick_Trunk.Action_2, Kick_Arm.Action_2, Kick_Follow.Through_2, sep = ""),
+    Kick_Profile_3 = str_c(Kick_Approach_3, Kick_Support.Loc_3, Kick_Knee.Action_3, Kick_Trunk.Action_3, Kick_Arm.Action_3, Kick_Follow.Through_3, sep = ""),
+    Kick_Profile_4 = str_c(Kick_Approach_4, Kick_Support.Loc_4, Kick_Knee.Action_4, Kick_Trunk.Action_4, Kick_Arm.Action_4, Kick_Follow.Through_4, sep = ""),
+    Kick_Profile_5 = str_c(Kick_Approach_5, Kick_Support.Loc_5, Kick_Knee.Action_5, Kick_Trunk.Action_5, Kick_Arm.Action_5, Kick_Follow.Through_5, sep = ""),
+    Jump_TO_Profile_1 = str_c(Jump_TO_Arm_1, Jump_TO_Leg_1, sep = ""),
+    Jump_TO_Profile_2 = str_c(Jump_TO_Arm_2, Jump_TO_Leg_2, sep = ""),
+    Jump_TO_Profile_3 = str_c(Jump_TO_Arm_3, Jump_TO_Leg_3, sep = ""),
+    Jump_TO_Profile_4 = str_c(Jump_TO_Arm_4, Jump_TO_Leg_4, sep = ""),
+    Jump_TO_Profile_5 = str_c(Jump_TO_Arm_5, Jump_TO_Leg_5, sep = ""),
+    Jump_LND_Profile_1 = str_c(Jump_LND_Arm_1, Jump_LND_Foot_1, Jump_LND_Shank_1, sep = ""),
+    Jump_LND_Profile_2 = str_c(Jump_LND_Arm_2, Jump_LND_Foot_2, Jump_LND_Shank_2, sep = ""),
+    Jump_LND_Profile_3 = str_c(Jump_LND_Arm_3, Jump_LND_Foot_3, Jump_LND_Shank_3, sep = ""),
+    Jump_LND_Profile_4 = str_c(Jump_LND_Arm_4, Jump_LND_Foot_4, Jump_LND_Shank_4, sep = ""),
+    Jump_LND_Profile_5 = str_c(Jump_LND_Arm_5, Jump_LND_Foot_5, Jump_LND_Shank_5, sep = "")
+  )
+    
+
+#Combining Takeoff and Landing for a total Jump Profile
+
+ds <- ds %>%
+  mutate(
+    Jump_Profile_1 = str_c(Jump_TO_Profile_1, Jump_LND_Profile_1),
+    Jump_Profile_2 = str_c(Jump_TO_Profile_2, Jump_LND_Profile_2),
+    Jump_Profile_3 = str_c(Jump_TO_Profile_3, Jump_LND_Profile_3),
+    Jump_Profile_4 = str_c(Jump_TO_Profile_4, Jump_LND_Profile_4),
+    Jump_Profile_5 = str_c(Jump_TO_Profile_5, Jump_LND_Profile_5)
+  )
+
+
+#Creating Modal Profiles for each skill
+
+ds <- ds %>%
+  rowwise() %>%
+  mutate(
+    Throw_Profile_Mode = {
+      profs <- c_across(starts_with("Throw_Profile_"))
+      tbl <- table(na.omit(profs))
+      if (length(tbl) == 0) NA_character_ else names(sort(tbl, decreasing = TRUE))[1]
+    },
+    Hopping_Profile_Mode = {
+      profs <- c_across(starts_with("Hopping_Profile_"))
+      tbl <- table(na.omit(profs))
+      if (length(tbl) == 0) NA_character_ else names(sort(tbl, decreasing = TRUE))[1]
+    },
+    Kick_Profile_Mode = {
+      profs <- c_across(starts_with("Kick_Profile_"))
+      tbl <- table(na.omit(profs))
+      if (length(tbl) == 0) NA_character_ else names(sort(tbl, decreasing = TRUE))[1]
+    },
+    Jump_Profile_Mode = {
+      profs <- c_across(starts_with("Jump_Profile_"))
+      tbl <- table(na.omit(profs))
+      if (length(tbl) == 0) NA_character_ else names(sort(tbl, decreasing = TRUE))[1]
+    }
+  ) %>%
+  ungroup()
+
+
+```
+
+
+Counting Profiles At different timepoints
+
+```{r}
+
+#Creating function that puts together modes for different profiles
+modal_freq_table <- function(data, profile_col) {
+  data %>%
+    count(Cohort, Timepoint, !!sym(profile_col), name = "Frequency") %>%
+    group_by(Cohort, Timepoint) %>%
+    mutate(Proportion = Frequency / sum(Frequency)) %>%
+    arrange(Cohort, Timepoint, desc(Frequency)) %>%
+    ungroup()
+}
+
+modal_freq_table(ds, "Throw_Profile_Mode")
+modal_freq_table(ds, "Hopping_Profile_Mode")
+modal_freq_table(ds, "Kick_Profile_Mode")
+modal_freq_table(ds, "Jump_Profile_Mode")
+```
+
+Counting Each Component for each timepoint
+
+```{r}
+#Table function for putting together the tables
+
+component_freq_table <- function(data, component_mode_col) {
+  data %>%
+    group_by(Cohort, Timepoint, Score = .data[[component_mode_col]]) %>%
+    summarise(Frequency = n(), .groups = "drop") %>%
+    group_by(Cohort, Timepoint) %>%
+    mutate(Proportion = Frequency / sum(Frequency)) %>%
+    arrange(Cohort, Timepoint, desc(Frequency)) %>%
+    ungroup()
+}
+
+
+#Throwing
+component_freq_table(ds, "Throw_Step_Mode")
+component_freq_table(ds, "Throw_Trunk_Mode")
+component_freq_table(ds, "Throw_Humerus_Mode")
+component_freq_table(ds, "Throw_Forearm_Mode")
+
+#Kicking
+component_freq_table(ds, "Kick_Approach_Mode")
+component_freq_table(ds, "Kick_Support.Loc_Mode")
+component_freq_table(ds, "Kick_Knee.Action_Mode")
+component_freq_table(ds, "Kick_Trunk.Action_Mode")
+component_freq_table(ds, "Kick_Arm.Action_Mode")
+component_freq_table(ds, "Kick_Follow.Through_Mode")
+
+#Hopping
+component_freq_table(ds, "Hopping_Arm_Mode")
+component_freq_table(ds, "Hopping_Leg_Mode")
+
+#Jumping
+component_freq_table(ds, "Jump_TO_Arm_Mode")
+component_freq_table(ds, "Jump_TO_Leg_Mode")
+component_freq_table(ds, "Jump_LND_Arm_Mode")
+component_freq_table(ds, "Jump_LND_Foot_Mode")
+component_freq_table(ds, "Jump_LND_Shank_Mode")
+```
+
+
+
+Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Cmd+Option+I*.
+
+When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Cmd+Shift+K* to preview the HTML file). 
+
+The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.
+

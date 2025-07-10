@@ -1,0 +1,505 @@
+---
+title: "Component Developmental Sequence Analysis"
+author: "Bryan Terlizzi"
+output: html_notebook
+---
+
+```{r include=FALSE}
+library(tidyverse)
+library(here)
+library(dplyr)
+library(stringr)
+library(purrr)
+
+ds <- read.csv(here("Data", "Merged_CompSkillSeq_byTimepoint_v2.csv"), na.strings = c("", "NA"))
+
+```
+
+
+# Data Description:
+
+Intervention and Control Cohorts across 5 timepoints. Component Developmental sequence data across 4 skills (Standing Long Jump, 1-Leg Hop, Throwing, and Kicking). Collected at 5 different timepoints.
+
+### Created Variables across the 4 skills:
+1) Mode for each DS component. 
+2) Component Profile for each of 5 trial.
+3) Component Profile Mode for each of 5 timepoints.
+
+
+```{r echo=FALSE}
+#Creating Mode for each component
+
+# Define mode function
+get_mode <- function(x) {
+  x <- na.omit(x)
+  if (length(x) == 0) return(NA)
+  ux <- unique(x)
+  ux[which.max(tabulate(match(x, ux)))]
+}
+
+# Compute modal component scores
+ds <- ds %>%
+  rowwise() %>%
+  mutate(
+    # Throwing
+    Throw_Step_Mode = get_mode(c_across(starts_with("Throw_Step_"))),
+    Throw_Trunk_Mode = get_mode(c_across(starts_with("Throw_Trunk_"))),
+    Throw_Humerus_Mode = get_mode(c_across(starts_with("Throw_Humerus_"))),
+    Throw_Forearm_Mode = get_mode(c_across(starts_with("Throw_Forearm_"))),
+
+    # Kicking
+    Kick_Approach_Mode = get_mode(c_across(starts_with("Kick_Approach_"))),
+    Kick_Support.Loc_Mode = get_mode(c_across(starts_with("Kick_Support.Loc_"))),
+    Kick_Knee.Action_Mode = get_mode(c_across(starts_with("Kick_Knee.Action_"))),
+    Kick_Trunk.Action_Mode = get_mode(c_across(starts_with("Kick_Trunk.Action_"))),
+    Kick_Arm.Action_Mode = get_mode(c_across(starts_with("Kick_Arm.Action_"))),
+    Kick_Follow.Through_Mode = get_mode(c_across(starts_with("Kick_Follow.Through_"))),
+
+    # Hopping
+    Hopping_Arm_Mode = get_mode(c_across(starts_with("Hopping_Arm_"))),
+    Hopping_Leg_Mode = get_mode(c_across(starts_with("Hopping_Leg_"))),
+
+    # Jumping
+    Jump_TO_Arm_Mode = get_mode(c_across(starts_with("Jump_TO_Arm_"))),
+    Jump_TO_Leg_Mode = get_mode(c_across(starts_with("Jump_TO_Leg_"))),
+    Jump_LND_Arm_Mode = get_mode(c_across(starts_with("Jump_LND_Arm_"))),
+    Jump_LND_Foot_Mode = get_mode(c_across(starts_with("Jump_LND_Foot_"))),
+    Jump_LND_Shank_Mode = get_mode(c_across(starts_with("Jump_LND_Shank_")))
+  ) %>%
+  ungroup()
+
+
+# Creating Dev Seq Profile variables for each trial
+
+ds <- ds %>%
+  mutate(
+    Throw_Profile_1 = str_c(Throw_Step_1, Throw_Trunk_1, Throw_Humerus_1, Throw_Forearm_1, sep = ""),
+    Throw_Profile_2 = str_c(Throw_Step_2, Throw_Trunk_2, Throw_Humerus_2, Throw_Forearm_2, sep = ""),
+    Throw_Profile_3 = str_c(Throw_Step_3, Throw_Trunk_3, Throw_Humerus_3, Throw_Forearm_3, sep = ""),
+    Throw_Profile_4 = str_c(Throw_Step_4, Throw_Trunk_4, Throw_Humerus_4, Throw_Forearm_4, sep = ""),
+    Throw_Profile_5 = str_c(Throw_Step_5, Throw_Trunk_5, Throw_Humerus_5, Throw_Forearm_5, sep = ""),
+    Hopping_Profile_1 = str_c(Hopping_Arm_1, Hopping_Leg_1, sep = ""),
+    Hopping_Profile_2 = str_c(Hopping_Arm_2, Hopping_Leg_2, sep = ""),
+    Hopping_Profile_3 = str_c(Hopping_Arm_3, Hopping_Leg_3, sep = ""),
+    Hopping_Profile_4 = str_c(Hopping_Arm_4, Hopping_Leg_4, sep = ""),
+    Kick_Profile_1 = str_c(Kick_Approach_1, Kick_Support.Loc_1, Kick_Knee.Action_1, Kick_Trunk.Action_1, Kick_Arm.Action_1, Kick_Follow.Through_1, sep = ""),
+    Kick_Profile_2 = str_c(Kick_Approach_2, Kick_Support.Loc_2, Kick_Knee.Action_2, Kick_Trunk.Action_2, Kick_Arm.Action_2, Kick_Follow.Through_2, sep = ""),
+    Kick_Profile_3 = str_c(Kick_Approach_3, Kick_Support.Loc_3, Kick_Knee.Action_3, Kick_Trunk.Action_3, Kick_Arm.Action_3, Kick_Follow.Through_3, sep = ""),
+    Kick_Profile_4 = str_c(Kick_Approach_4, Kick_Support.Loc_4, Kick_Knee.Action_4, Kick_Trunk.Action_4, Kick_Arm.Action_4, Kick_Follow.Through_4, sep = ""),
+    Kick_Profile_5 = str_c(Kick_Approach_5, Kick_Support.Loc_5, Kick_Knee.Action_5, Kick_Trunk.Action_5, Kick_Arm.Action_5, Kick_Follow.Through_5, sep = ""),
+    Jump_TO_Profile_1 = str_c(Jump_TO_Arm_1, Jump_TO_Leg_1, sep = ""),
+    Jump_TO_Profile_2 = str_c(Jump_TO_Arm_2, Jump_TO_Leg_2, sep = ""),
+    Jump_TO_Profile_3 = str_c(Jump_TO_Arm_3, Jump_TO_Leg_3, sep = ""),
+    Jump_TO_Profile_4 = str_c(Jump_TO_Arm_4, Jump_TO_Leg_4, sep = ""),
+    Jump_TO_Profile_5 = str_c(Jump_TO_Arm_5, Jump_TO_Leg_5, sep = ""),
+    Jump_LND_Profile_1 = str_c(Jump_LND_Arm_1, Jump_LND_Foot_1, Jump_LND_Shank_1, sep = ""),
+    Jump_LND_Profile_2 = str_c(Jump_LND_Arm_2, Jump_LND_Foot_2, Jump_LND_Shank_2, sep = ""),
+    Jump_LND_Profile_3 = str_c(Jump_LND_Arm_3, Jump_LND_Foot_3, Jump_LND_Shank_3, sep = ""),
+    Jump_LND_Profile_4 = str_c(Jump_LND_Arm_4, Jump_LND_Foot_4, Jump_LND_Shank_4, sep = ""),
+    Jump_LND_Profile_5 = str_c(Jump_LND_Arm_5, Jump_LND_Foot_5, Jump_LND_Shank_5, sep = "")
+  )
+    
+
+#Combining Takeoff and Landing for a total Jump Profile (too variable)
+
+ds <- ds %>%
+ mutate(
+  Jump_Profile_1 = str_c(Jump_TO_Profile_1, Jump_LND_Profile_1),
+  Jump_Profile_2 = str_c(Jump_TO_Profile_2, Jump_LND_Profile_2),
+  Jump_Profile_3 = str_c(Jump_TO_Profile_3, Jump_LND_Profile_3),
+  Jump_Profile_4 = str_c(Jump_TO_Profile_4, Jump_LND_Profile_4),
+  Jump_Profile_5 = str_c(Jump_TO_Profile_5, Jump_LND_Profile_5)
+  )
+
+
+
+#Creating Modal Profiles for each skill
+
+ds <- ds %>%
+  rowwise() %>%
+  mutate(
+    Throw_Profile_Mode = get_mode(c_across(starts_with("Throw_Profile_"))),
+    Hopping_Profile_Mode = get_mode(c_across(starts_with("Hopping_Profile_"))),
+    Kick_Profile_Mode = get_mode(c_across(starts_with("Kick_Profile_"))),
+    Jump_Profile_Mode = get_mode(c_across(starts_with("Jump_Profile_"))),
+    Jump_TO_Profile_Mode = get_mode(c_across(starts_with("Jump_TO_Profile_"))),
+    Jump_LND_Profile_Mode = get_mode(c_across(starts_with("Jump_LND_Profile_")))
+  ) %>%
+  ungroup()
+
+
+```
+
+# Analysis. 
+
+## Frequency of Each Component for each timepoint 
+
+```{r echo=FALSE}
+#Table function for putting together the tables
+
+component_freq_table <- function(data, component_mode_col) {
+  data %>%
+    filter(!is.na(.data[[component_mode_col]])) %>%
+    group_by(Cohort, Timepoint, Score = as.character(.data[[component_mode_col]])) %>%
+    summarise(Frequency = n(), .groups = "drop") %>%
+    group_by(Cohort, Timepoint) %>%
+    mutate(Proportion = Frequency / sum(Frequency)) %>%
+    ungroup() %>%
+    mutate(Proportion = as.numeric(Proportion)) %>%
+    select(Cohort, Timepoint, Score, Proportion) %>%
+    pivot_wider(names_from = Score, values_from = Proportion, values_fill = 0) %>%
+    arrange(Cohort, Timepoint)
+}
+
+# ---- BARPLOTS TO SHOW PROPORTION OF COMPONENT SCORES ----
+
+# 1. List of component mode variable names
+component_vars <- c(
+  "Throw_Step_Mode", "Throw_Trunk_Mode", "Throw_Humerus_Mode", "Throw_Forearm_Mode",
+  "Kick_Approach_Mode", "Kick_Support.Loc_Mode", "Kick_Knee.Action_Mode", "Kick_Trunk.Action_Mode",
+  "Kick_Arm.Action_Mode", "Kick_Follow.Through_Mode",
+  "Hopping_Arm_Mode", "Hopping_Leg_Mode",
+  "Jump_TO_Arm_Mode", "Jump_TO_Leg_Mode",
+  "Jump_LND_Arm_Mode", "Jump_LND_Foot_Mode", "Jump_LND_Shank_Mode"
+)
+
+# 2. Initialize list to store plots
+component_barplots <- list()
+
+# 3. Loop through each component
+for (component in component_vars) {
+  
+  # Wide to long table for plotting
+  long_df <- component_freq_table(ds, component) %>%
+    pivot_longer(cols = -c(Cohort, Timepoint), names_to = "Score", values_to = "Proportion") %>%
+    mutate(Score = factor(Score), Timepoint = factor(Timepoint))
+  
+  # Plot
+  p <- ggplot(long_df, aes(x = Timepoint, y = Proportion * 100, fill = Score)) +
+    geom_bar(stat = "identity", position = position_dodge()) +
+    facet_wrap(~ Cohort, ncol = 1, labeller = labeller(Cohort = c(C1 = "Cohort 1", C2 = "Cohort 2"))) +
+    scale_y_continuous(name = "Proportion of Participants (%)", limits = c(0, 100)) +
+    labs(
+      title = paste("Component Score Proportions:", component),
+      x = "Timepoint",
+      fill = "Component Score"
+    ) +
+    theme_minimal(base_size = 13) +
+    theme(
+      plot.title = element_text(face = "bold", hjust = 0.5),
+      strip.text = element_text(face = "bold", size = 13)
+    )
+  
+  component_barplots[[component]] <- p
+}
+
+# Example: Show plot
+#component_barplots$Throw_Step_Mode
+
+```
+
+### Throwing. 
+
+Step. 
+
+```{r echo=FALSE}
+#Throwing
+component_freq_table(ds, "Throw_Step_Mode")
+component_barplots$Throw_Step_Mode
+
+```
+
+Trunk.   
+
+```{r echo=FALSE}
+component_freq_table(ds, "Throw_Trunk_Mode")
+component_barplots$Throw_Trunk_Mode
+```
+
+Humerus.  
+
+```{r echo=FALSE}
+component_freq_table(ds, "Throw_Humerus_Mode")
+component_barplots$Throw_Humerus_Mode
+```
+
+Forearm.  
+
+```{r echo=FALSE}
+component_freq_table(ds, "Throw_Forearm_Mode")
+component_barplots$Throw_Forearm_Mode
+```
+
+### Kicking
+
+Approach.  
+```{r echo=FALSE}
+#Kicking
+component_freq_table(ds, "Kick_Approach_Mode")
+component_barplots$Kick_Approach_Mode
+```
+
+Support Location.  
+
+```{r echo=FALSE}
+component_freq_table(ds, "Kick_Support.Loc_Mode")
+component_barplots$Kick_Support.Loc_Mode
+```
+
+Knee Action.  
+
+```{r echo=FALSE}
+component_freq_table(ds, "Kick_Knee.Action_Mode")
+component_barplots$Kick_Knee.Action_Mode
+```
+
+Trunk Action.  
+
+```{r echo=FALSE}
+component_freq_table(ds, "Kick_Trunk.Action_Mode")
+component_barplots$Kick_Trunk.Action_Mode
+```
+
+Arm Action.  
+
+```{r echo=FALSE}
+component_freq_table(ds, "Kick_Arm.Action_Mode")
+component_barplots$Kick_Arm.Action_Mode
+```
+
+Follow Through.  
+
+```{r echo=FALSE}
+component_freq_table(ds, "Kick_Follow.Through_Mode")
+component_barplots$Kick_Follow.Through_Mode
+```
+
+### Hopping.  
+
+Arm Action.  
+```{r echo=FALSE}
+#Hopping
+component_freq_table(ds, "Hopping_Arm_Mode")
+component_barplots$Hopping_Arm_Mode
+```
+
+Leg Action.  
+
+```{r echo=FALSE}
+component_freq_table(ds, "Hopping_Leg_Mode")
+component_barplots$Hopping_Leg_Mode
+```
+
+### Jumping.  
+
+Takeoff - Arm.  
+```{r echo=FALSE}
+#Jumping
+component_freq_table(ds, "Jump_TO_Arm_Mode")
+component_barplots$Jump_TO_Arm_Mode
+```
+
+Takeoff - Leg.  
+
+```{r echo=FALSE}
+component_freq_table(ds, "Jump_TO_Leg_Mode")
+component_barplots$Jump_TO_Leg_Mode
+```
+
+Landing - Arm.  
+
+```{r echo=FALSE}
+component_freq_table(ds, "Jump_LND_Arm_Mode")
+component_barplots$Jump_LND_Arm_Mode
+```
+
+Landing - Foot.  
+
+```{r echo=FALSE}
+component_freq_table(ds, "Jump_LND_Foot_Mode")
+component_barplots$Jump_LND_Foot_Mode
+```
+
+Landing - Shank.  
+
+```{r echo=FALSE}
+component_freq_table(ds, "Jump_LND_Shank_Mode")
+component_barplots$Jump_LND_Shank_Mode
+```
+
+
+
+## Frequency and Proportion of Profile Modes at different timepoints
+
+```{r echo=FALSE}
+#Creating function that puts together modes for different profiles
+
+modal_freq_table1 <- function(data, profile_col) {
+  data %>%
+    filter(!is.na(.data[[profile_col]])) %>%  # exclude NA modal profiles
+    count(Cohort, Timepoint, !!sym(profile_col), name = "Frequency") %>%
+    group_by(Cohort, Timepoint) %>%
+    mutate(Proportion = Frequency / sum(Frequency)) %>%
+    arrange(Cohort, Timepoint, desc(Frequency)) %>%
+    ungroup()
+}
+
+modal_freq_table <- function(data, profile_col) {
+  # Count + proportion
+  freq_data <- data %>%
+    filter(!is.na(.data[[profile_col]])) %>%
+    count(Cohort, Timepoint, Profile = .data[[profile_col]], name = "Frequency") %>%
+    group_by(Cohort, Timepoint) %>%
+    mutate(Proportion = Frequency / sum(Frequency)) %>%
+    arrange(Cohort, Timepoint, desc(Proportion)) %>%
+    slice_head(n = 5) %>%  # keep top 5 per Cohort × Timepoint
+    ungroup()
+
+  # Pivot to wide
+  freq_data %>%
+    select(Cohort, Timepoint, Profile, Proportion) %>%
+    pivot_wider(
+      names_from = Profile,
+      values_from = Proportion,
+      values_fill = 0
+    ) %>%
+    arrange(Cohort, Timepoint)
+}
+
+
+```
+
+
+Try at a Figure to illustrate
+
+```{r echo=FALSE}
+# Function: Get top 5 modal profiles per timepoint (long format)
+modal_freq_long <- function(data, profile_col) {
+  data %>%
+    filter(!is.na(.data[[profile_col]])) %>%
+    count(Cohort, Timepoint, Profile = .data[[profile_col]], name = "Frequency") %>%
+    group_by(Cohort, Timepoint) %>%
+    mutate(Proportion = Frequency / sum(Frequency)) %>%
+    arrange(Cohort, Timepoint, desc(Proportion)) %>%
+    slice_head(n = 5) %>%
+    ungroup()
+}
+
+# List of skill profile variables
+skill_profiles <- c(
+  "Throw_Profile_Mode",
+  "Hopping_Profile_Mode",
+  "Kick_Profile_Mode",
+  "Jump_Profile_Mode",
+  "Jump_TO_Profile_Mode",
+  "Jump_LND_Profile_Mode"
+)
+
+# Initialize empty list to store plots
+skill_profile_plots <- list()
+
+# Loop through each skill, create plot, and save in list
+for (profile in skill_profiles) {
+  
+  # Get long format data
+  plot_data <- modal_freq_long(ds, profile)
+  
+  # Create plot
+  p <- ggplot(plot_data, aes(x = Timepoint, y = Proportion, color = Profile, group = Profile)) +
+    geom_line(size = 1.1) +
+    geom_point(size = 2.5) +
+    facet_wrap(~ Cohort, ncol = 1, labeller = labeller(Cohort = c(C1 = "Cohort 1 (C1)", C2 = "Cohort 2 (C2)"))) +
+    scale_y_continuous(labels = scales::percent_format(accuracy = 1)) +
+    labs(
+      title = paste("Top 5 Modal Profiles Over Time:", str_replace_all(profile, "_", " ")),
+      x = "Timepoint",
+      y = "Proportion of Participants",
+      color = "Profile"
+    ) +
+    theme_minimal(base_size = 13) +
+    theme(
+      strip.text = element_text(face = "bold", size = 14, color = "black"),
+      plot.title = element_text(face = "bold", hjust = 0.5),
+      panel.spacing.y = unit(1.5, "lines")
+    )
+  # Store plot
+  skill_profile_plots[[profile]] <- p
+}
+
+# Example: display one
+skill_profile_plots$Throw_Profile_Mode
+```
+**Note:** Throwing profile components are ordered as: Step, Trunk, Humerus, Forearm. 
+
+```{r echo=FALSE}
+modal_freq_table(ds, "Throw_Profile_Mode")
+```
+**Note:** Throwing profile components are ordered as: Step, Trunk, Humerus, Forearm. 
+
+```{r echo=FALSE}
+skill_profile_plots$Kick_Profile_Mode
+```
+**Note:** Kicking profile components are ordered as: Approach, Support Leg, Knee Action, Trunk Action, Arm Action, Follow Through. 
+
+```{r echo=FALSE}
+modal_freq_table(ds, "Kick_Profile_Mode")
+```
+**Note:** Kicking profile components are ordered as: Approach, Support Leg, Knee Action, Trunk Action, Arm Action, Follow Through. 
+
+```{r echo=FALSE}
+skill_profile_plots$Hopping_Profile_Mode
+```
+**Note:** Hopping profile components are ordered as: Arm, Leg. 
+
+```{r echo=FALSE}
+modal_freq_table(ds, "Hopping_Profile_Mode")
+```
+**Note:** Hopping profile components are ordered as: Arm, Leg. 
+
+
+```{r echo=FALSE}
+skill_profile_plots$Jump_Profile_Mode
+```
+**Note:** Jump profile components are ordered as: Takeoff (Arm, Leg) + Landing (Arm, Foot, Shank). 
+
+```{r echo=FALSE}
+modal_freq_table(ds, "Jump_Profile_Mode")
+```
+**Note:** Jump profile components are ordered as: Takeoff (Arm, Leg) + Landing (Arm, Foot, Shank). 
+
+
+```{r echo=FALSE}
+skill_profile_plots$Jump_TO_Profile_Mode
+```
+**Note:** Jump profile components are ordered as: Takeoff (Arm, Leg) + Landing (Arm, Foot, Shank). 
+
+
+```{r echo=FALSE}
+modal_freq_table(ds, "Jump_TO_Profile_Mode")
+
+```
+**Note:** Jump profile components are ordered as: Takeoff (Arm, Leg) + Landing (Arm, Foot, Shank). 
+
+
+```{r echo=FALSE}
+skill_profile_plots$Jump_LND_Profile_Mode
+```
+
+**Note:** Jump profile components are ordered as: Takeoff (Arm, Leg) + Landing (Arm, Foot, Shank). 
+
+
+
+
+```{r echo=FALSE}
+modal_freq_table(ds, "Jump_LND_Profile_Mode")
+```
+**Note:** Jump profile components are ordered as: Takeoff (Arm, Leg) + Landing (Arm, Foot, Shank). 
+
+
+
+Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Cmd+Option+I*.
+
+When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Cmd+Shift+K* to preview the HTML file). 
+
+The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.
+
