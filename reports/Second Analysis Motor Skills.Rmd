@@ -1,0 +1,565 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+This is analysis on Michigan motor skill data. Evaluating changes in developmental sequence and TGMD scores over time
+
+```{r}
+library(tidyverse)
+library(here)
+library(dplyr)
+library(stringr)
+library(purrr)
+
+df <- read.csv(here("data_clean", "DEVSEQ_MergedData_1.26.25.csv"), na.strings = c("", "NA"))
+
+#Changing variable names to all lower case
+names(df) <- tolower(names(df))
+
+#standardize anychange -> abschange
+names(df) <- str_replace(names(df), "_anychange$", "_abschange")
+
+#Adding skill prefix to copmonent variables
+
+#1) Identifying variables for each skill
+#Hop
+hop_vars <- c(
+  "foot_1",
+  "arm_1",
+  "arm_1_dirchange",
+  "arm_1_abschange",
+  "leg_1",
+  "leg_1_dirchange",
+  "leg_1_abschange",
+  "foot_2",
+  "arm_2",
+  "arm_2_dirchange",
+  "arm_2_abschange",
+  "leg_2",
+  "leg_2_dirchange",
+  "leg_2_abschange",
+  "foot_3",
+  "arm_3",
+  "arm_3_dirchange",
+  "arm_3_abschange",
+  "leg_3",
+  "leg_3_dirchange",
+  "leg_3_abschange",
+  "foot_4",
+  "arm_4",
+  "arm_4_dirchange",
+  "arm_4_abschange",
+  "leg_4",
+  "leg_4_dirchange",
+  "leg_4_abschange",
+  "leg_modalperformance",
+  "arm_modalperformance",
+  "foot_modalchoice"
+)
+#kick
+kick_vars <- c(
+  "approach_1",
+  "supportloc_1",
+  "kneeaction_1",
+  "trunkaction_1",
+  "armaction_1",
+  "followthrough_1",
+  "approach_2",
+  "supportloc_2",
+  "kneeaction_2",
+  "trunkaction_2",
+  "armaction_2",
+  "followthrough_2",
+  "approach_3",
+  "supportloc_3",
+  "kneeaction_3",
+  "trunkaction_3",
+  "armaction_3",
+  "followthrough_3",
+  "approach_4",
+  "supportloc_4",
+  "kneeaction_4",
+  "trunkaction_4",
+  "armaction_4",
+  "followthrough_4",
+  "approach_5",
+  "supportloc_5",
+  "kneeaction_5",
+  "trunkaction_5",
+  "armaction_5",
+  "followthrough_5",
+  "approach_mode",
+  "approach_dirchange",
+  "approach_abschange",
+  "support_mode",
+  "support_dirchange",
+  "support_abschange",
+  "kneeaction_mode",
+  "kneeaction_dirchange",
+  "kneeaction_abschange",
+  "trunkaction_mode",
+  "trunkaction_dirchange",
+  "trunkaction_abschange",
+  "armaction_mode",
+  "armaction_dirchange",
+  "armaction_abschange",
+  "followthrough_mode",
+  "followthrough_dirchange",
+  "followthrough_abschange"
+)
+
+#jump
+
+jump_vars <- c(
+  "armtakeoff_1",
+  "legtakeoff_1",
+  "shanklanding_1",
+  "footlanding_1",
+  "armlanding_1",
+  "armtakeoff_2",
+  "legtakeoff_2",
+  "shanklanding_2",
+  "footlanding_2",
+  "armlanding_2",
+  "armtakeoff_3",
+  "legtakeoff_3",
+  "shanklanding_3",
+  "footlanding_3",
+  "armlanding_3",
+  "armtakeoff_4",
+  "legtakeoff_4",
+  "shanklanding_4",
+  "footlanding_4",
+  "armlanding_4",
+  "armtakeoff_5",
+  "legtakeoff_5",
+  "shanklanding_5",
+  "footlanding_5",
+  "armlanding_5",
+  "armtakeoff_mode",
+  "armtakeoff_dirchange",
+  "armtakeoff_abschange",
+  "legtakeoff_mode",
+  "legtakeoff_dirchange",
+  "legtakeoff_abschange",
+  "shanklanding_mode",
+  "shanklanding_dirchange",
+  "shanklanding_abschange",
+  "footlanding_mode",
+  "footlanding_dirchange",
+  "footlanding_abschange",
+  "armlanding_mode",
+  "armlanding_dirchange",
+  "armlanding_abschange"
+)
+
+#throw
+throw_vars <- c(
+  "step_1",
+  "trunk_1",
+  "humerus_1",
+  "forearm_1",
+  "step_2",
+  "trunk_2",
+  "humerus_2",
+  "forearm_2",
+  "step_3",
+  "trunk_3",
+  "humerus_3",
+  "forearm_3",
+  "step_4",
+  "trunk_4",
+  "humerus_4",
+  "forearm_4",
+  "step_5",
+  "trunk_5",
+  "humerus_5",
+  "forearm_5",
+  "step_mode",
+  "step_dirchange",
+  "step_abschange",
+  "trunk_mode",
+  "trunk_dirchange",
+  "trunk_abschange",
+  "humerus_mode",
+  "humerus_dirchange",
+  "humerus_abschange",
+  "forearm_mode",
+  "forearm_dirchange",
+  "forearm_abschange"
+)
+
+# 2) Map skill -> variables
+skill_vars <- list(
+  hop   = hop_vars,
+  kick  = kick_vars,
+  jump  = jump_vars,
+  throw = throw_vars
+)
+
+# 3) Prefix each skill to its variables
+nm <- names(df)
+
+for (skill in names(skill_vars)) {
+  idx <- nm %in% skill_vars[[skill]] & !str_detect(nm, paste0("^", skill, "_"))
+  nm[idx] <- paste0(skill, "_", nm[idx])
+}
+
+names(df) <- nm
+rm(nm, idx, skill)  # optional cleanup
+
+# Defining hopping modes. Preferred defined as foot used for trial 1.
+# Mode defined as highest component level demonstrated on specified foot.
+
+get_max_score <- function(x) {
+  x <- suppressWarnings(as.numeric(x))
+  x <- na.omit(x)
+  if (length(x) == 0) return(NA_real_)
+  max(x)
+}
+
+# Long: hop foot (character)
+hop_foot_long <- df %>%
+  select(childid, cohort, timeindex, interventiongroup, starts_with("hop_foot_")) %>%
+  pivot_longer(
+    cols = matches("^hop_foot_\\d+$"),
+    names_to = "trial",
+    names_pattern = "^hop_foot_(\\d+)$",
+    values_to = "foot"
+  ) %>%
+  mutate(trial = as.integer(trial))
+
+# Long: hop arm (numeric)
+hop_arm_long <- df %>%
+  select(childid, cohort, timeindex, interventiongroup, starts_with("hop_arm_")) %>%
+  pivot_longer(
+    cols = matches("^hop_arm_\\d+$"),
+    names_to = "trial",
+    names_pattern = "^hop_arm_(\\d+)$",
+    values_to = "arm"
+  ) %>%
+  mutate(trial = as.integer(trial))
+
+# Long: hop leg (numeric)
+hop_leg_long <- df %>%
+  select(childid, cohort, timeindex, interventiongroup, starts_with("hop_leg_")) %>%
+  pivot_longer(
+    cols = matches("^hop_leg_\\d+$"),
+    names_to = "trial",
+    names_pattern = "^hop_leg_(\\d+)$",
+    values_to = "leg"
+  ) %>%
+  mutate(trial = as.integer(trial))
+
+# Combine into one trial-level hop table
+hop_trials_long <- hop_foot_long %>%
+  left_join(hop_arm_long, by = c("childid","cohort","timeindex","interventiongroup","trial")) %>%
+  left_join(hop_leg_long, by = c("childid","cohort","timeindex","interventiongroup","trial"))
+
+# Compute max scores by preferred vs non-preferred foot, then join back to df
+hop_pref_modes <- hop_trials_long %>%
+  group_by(childid, cohort, timeindex, interventiongroup) %>%
+  mutate(
+    pref_foot = foot[trial == 1][1],
+    pref_status = case_when(
+      !is.na(foot) & foot == pref_foot ~ "pref",
+      !is.na(foot)                    ~ "nonpref",
+      TRUE                            ~ NA_character_
+    )
+  ) %>%
+  ungroup() %>%
+  filter(!is.na(pref_status)) %>%
+  group_by(childid, cohort, timeindex, interventiongroup, pref_status) %>%
+  summarise(
+    hop_arm_mode = get_max_score(arm),
+    hop_leg_mode = get_max_score(leg),
+    .groups = "drop"
+  ) %>%
+  pivot_wider(
+    names_from = pref_status,
+    values_from = c(hop_arm_mode, hop_leg_mode),
+    names_glue = "{.value}_{pref_status}"
+  )
+
+df <- df %>%
+  left_join(hop_pref_modes, by = c("childid","cohort","timeindex","interventiongroup"))
+
+```
+
+Functions
+
+```{r}
+
+#Component Frequency Table Function
+component_freq_table <- function(data, component_mode_col,
+                                 cohort_col = "cohort",
+                                 time_col   = "timeindex",
+                                 group_col  = "interventiongroup") {
+
+  data %>%
+    filter(!is.na(.data[[component_mode_col]])) %>%
+    group_by(
+      .data[[cohort_col]],
+      .data[[time_col]],
+      .data[[group_col]],
+      Score = as.character(.data[[component_mode_col]])
+    ) %>%
+    summarise(Frequency = n(), .groups = "drop") %>%
+    group_by(.data[[cohort_col]], .data[[time_col]], .data[[group_col]]) %>%
+    mutate(Proportion = Frequency / sum(Frequency)) %>%
+    ungroup() %>%
+    select(.data[[cohort_col]], .data[[time_col]], .data[[group_col]], Score, Proportion) %>%
+    pivot_wider(names_from = Score, values_from = Proportion, values_fill = 0) %>%
+    arrange(.data[[cohort_col]], .data[[group_col]], .data[[time_col]])
+}
+
+#Plot Function
+
+component_barplot <- function(data, component_mode_col,
+                              cohort_col = "cohort",
+                              time_col   = "timeindex",
+                              group_col  = "interventiongroup") {
+
+  long_df <- data %>%
+    filter(!is.na(.data[[component_mode_col]])) %>%
+    group_by(.data[[cohort_col]], .data[[time_col]], .data[[group_col]],
+             Score = as.character(.data[[component_mode_col]])) %>%
+    summarise(n = n(), .groups = "drop") %>%
+    group_by(.data[[cohort_col]], .data[[time_col]], .data[[group_col]]) %>%
+    mutate(Proportion = n / sum(n)) %>%
+    ungroup()
+
+  ggplot(long_df, aes(x = factor(.data[[time_col]]),
+                     y = Proportion * 100,
+                     fill = Score)) +
+    geom_col(position = "stack") +
+    facet_grid(rows = vars(.data[[cohort_col]]),
+               cols = vars(.data[[group_col]]),
+               scales = "fixed") +
+    scale_y_continuous(name = "Proportion of Participants (%)", limits = c(0, 100)) +
+    labs(
+      title = paste("Component Score Proportions:", component_mode_col),
+      x = "Timepoint",
+      fill = "Component Score"
+    ) +
+    theme_minimal(base_size = 13) +
+    theme(
+      plot.title = element_text(face = "bold", hjust = 0.5),
+      strip.text = element_text(face = "bold", size = 12)
+    )
+}
+
+
+```
+
+Define component Mode Columns
+
+```{r}
+component_vars <- c(
+  # Throw
+  "throw_step_mode", "throw_trunk_mode", "throw_humerus_mode", "throw_forearm_mode",
+
+  # Kick
+  "kick_approach_mode", "kick_supportloc_mode", "kick_support_mode",
+  "kick_kneeaction_mode", "kick_trunkaction_mode", "kick_armaction_mode", "kick_followthrough_mode",
+
+  # Hop (existing summary vars)
+  "hop_foot_modalchoice", "hop_arm_modalperformance", "hop_leg_modalperformance",
+
+  # Hop (NEW pref/nonpref vars you created)
+  "hop_arm_mode_pref", "hop_arm_mode_nonpref",
+  "hop_leg_mode_pref", "hop_leg_mode_nonpref",
+
+  # Jump
+  "jump_armtakeoff_mode", "jump_legtakeoff_mode",
+  "jump_shanklanding_mode", "jump_footlanding_mode", "jump_armlanding_mode"
+)
+
+# keep only columns that actually exist
+component_vars <- component_vars[component_vars %in% names(df)]
+
+```
+
+Running Tables and Plots
+
+```{r}
+component_tables <- list()
+component_plots  <- list()
+
+for (v in component_vars) {
+  component_tables[[v]] <- component_freq_table(df, v)
+  component_plots[[v]]  <- component_barplot(df, v)
+}
+
+# Example:
+ component_tables[["throw_step_mode"]]
+ component_plots[["throw_step_mode"]]
+
+```
+### Analysis
+
+### Throwing. 
+
+Step. 
+
+```{r echo=FALSE}
+#Throwing
+ component_tables[["throw_step_mode"]]
+ component_plots[["throw_step_mode"]]
+
+```
+
+Trunk.   
+
+```{r echo=FALSE}
+ component_tables[["throw_trunk_mode"]]
+ component_plots[["throw_trunk_mode"]]
+```
+
+Humerus.  
+
+```{r echo=FALSE}
+ component_tables[["throw_humerus_mode"]]
+ component_plots[["throw_humerus_mode"]]
+```
+
+Forearm.  
+
+```{r echo=FALSE}
+ component_tables[["throw_forearm_mode"]]
+ component_plots[["throw_forearm_mode"]]
+```
+
+### Kicking
+
+Approach.  
+```{r echo=FALSE}
+#Kicking
+ component_tables[["kick_approach_mode"]]
+ component_plots[["kick_approach_mode"]]
+```
+
+Support Location.  
+
+```{r echo=FALSE}
+ component_tables[["kick_support_mode"]]
+ component_plots[["kick_support_mode"]]
+```
+
+Knee Action.  
+
+```{r echo=FALSE}
+ component_tables[["kick_kneeaction_mode"]]
+ component_plots[["kick_kneeaction_mode"]]
+```
+
+Trunk Action.  
+
+```{r echo=FALSE}
+ component_tables[["kick_trunkaction_mode"]]
+ component_plots[["kick_trunkaction_mode"]]
+```
+
+Arm Action.  
+
+```{r echo=FALSE}
+ component_tables[["kick_armaction_mode"]]
+ component_plots[["kick_armaction_mode"]]
+```
+
+Follow Through.  
+
+```{r echo=FALSE}
+ component_tables[["kick_followthrough_mode"]]
+ component_plots[["kick_followthrough_mode"]]
+```
+
+### Hopping.  
+
+Arm Action (overall)
+```{r echo=FALSE}
+# Hopping
+component_tables[["hop_arm_modalperformance"]]
+component_plots[["hop_arm_modalperformance"]]
+
+```
+
+Leg Action (overall).  
+
+```{r echo=FALSE}
+component_tables[["hop_leg_modalperformance"]]
+component_plots[["hop_leg_modalperformance"]]
+```
+
+Preferred Foot - Arm Action
+```{r echo=FALSE}
+# Hopping
+component_tables[["hop_arm_mode_pref"]]
+component_plots[["hop_arm_mode_pref"]]
+
+```
+
+Preferred Foot - Leg Action  
+
+```{r echo=FALSE}
+component_tables[["hop_leg_mode_pref"]]
+component_plots[["hop_leg_mode_pref"]]
+```
+
+Non-Preferred Foot - Arm Action
+```{r echo=FALSE}
+# Hopping
+component_tables[["hop_arm_mode_nonpref"]]
+component_plots[["hop_arm_mode_nonpref"]]
+
+```
+
+Non-Preferred Foot - Leg Action  
+
+```{r echo=FALSE}
+component_tables[["hop_leg_mode_nonpref"]]
+component_plots[["hop_leg_mode_nonpref"]]
+```
+### Jumping.  
+
+Takeoff - Arm.  
+```{r echo=FALSE}
+#Jumping
+component_tables[["jump_armtakeoff_mode"]]
+component_plots[["jump_armtakeoff_mode"]]
+```
+
+Takeoff - Leg.  
+
+```{r echo=FALSE}
+component_tables[["jump_legtakeoff_mode"]]
+component_plots[["jump_legtakeoff_mode"]]
+```
+
+Landing - Arm.  
+
+```{r echo=FALSE}
+component_tables[["jump_armlanding_mode"]]
+component_plots[["jump_armlanding_mode"]]
+```
+
+Landing - Foot.  
+
+```{r echo=FALSE}
+component_tables[["jump_footlanding_mode"]]
+component_plots[["jump_footlanding_mode"]]
+```
+
+Landing - Shank.  
+
+```{r echo=FALSE}
+component_tables[["jump_shanklanding_mode"]]
+component_plots[["jump_shanklanding_mode"]]
+```
+
+Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Ctrl+Alt+I*.
+
+When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Ctrl+Shift+K* to preview the HTML file).
+
+The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.
