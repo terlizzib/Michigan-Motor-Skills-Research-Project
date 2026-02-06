@@ -12,6 +12,7 @@ library(dplyr)
 library(stringr)
 library(purrr)
 
+ds <- read.csv(here("data_clean", "DEVSEQ_MergedData_1.26.25.csv"), na.strings = c("", "NA"))
 df <- read.csv(here("data_clean", "DEVSEQ_MergedData_1.26.25.csv"), na.strings = c("", "NA"))
 
 #Changing variable names to all lower case
@@ -558,7 +559,28 @@ component_tables[["jump_shanklanding_mode"]]
 component_plots[["jump_shanklanding_mode"]]
 ```
 
+
+
 Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Ctrl+Alt+I*.
+```{r}
+ds_c2_t2 <- ds %>%
+  dplyr::filter(Cohort == 2, TimeIndex == 2)
+
+nrow(ds_c2_t2)
+
+ds_c2_t2_g0 <- ds %>% dplyr::filter(Cohort == 2, TimeIndex == 2, InterventionGroup == 0)
+ds_c2_t2_g1 <- ds %>% dplyr::filter(Cohort == 2, TimeIndex == 2, InterventionGroup == 1)
+
+nrow(ds_c2_t2_g0)
+nrow(ds_c2_t2_g1)
+
+ds_c2_t2 %>%
+  dplyr::summarise(
+    n_total = dplyr::n(),
+    n_non_na = sum(!is.na(ArmTakeoff_Mode))
+  )
+
+```
 
 When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Ctrl+Shift+K* to preview the HTML file).
 
