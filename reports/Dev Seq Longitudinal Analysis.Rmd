@@ -11,7 +11,7 @@ library(dplyr)
 library(stringr)
 library(purrr)
 
-ds <- read.csv(here("Data", "Merged_CompSkillSeq_byTimepoint_v2.csv"), na.strings = c("", "NA"))
+ds <- read.csv(here("data_clean", "Merged_CompSkillSeq_byTimepoint_v2.csv"), na.strings = c("", "NA"))
 
 ```
 
